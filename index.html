@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<meta name="description" content="A description of your website">
+<meta name="keywords" content="keyword1, keyword2, keyword3">
+<link href="css/style.css" rel="stylesheet" type="text/css">
+<link href="css/quill.snow.css" rel="stylesheet">
+<script src="js/libs/jquery-3.3.1.min.js"></script>
+<script type='text/javascript' src='js/libs/knockout-min.js'></script>
+<link rel="stylesheet" href="css/jquery-ui.css" />
+<script src="js/libs/jquery-ui.js"></script>
+<script type='text/javascript' src='js/behavior.js'></script>
+<script type='text/javascript' src='js/content.js'></script>
+
+</head>
+<script>
+
+var vm = {
+ c : content,
+ b : behavior
+};
+	
+	
+$(() => {  
+
+  ko.applyBindings(vm);
+  document.title = content.headerTitle;
+
+  GotoPage(0,0);
+});
+
+</script>
+<body>
+
+<div id="wrapper"> 
+  <div id="header"> 
+    <div class="top_banner" data-bind="style:{ background: 'url(images/header.jpg) no-repeat left top'}">
+      <h1>
+		<span style="margin-left:5px" data-bind="text: c.headerTitle"></span>
+	  </h1>
+      <p data-bind="text: c.headerSubTitle"></p>
+    </div>
+  </div>
+	
+  <div id="page_content">
+	
+	<div class="navigation">
+		<script type="text/html" id="navigation_template">
+		 <!-- ko if: id > 0 -->
+			<li class="category_header selectable" data-bind="text: text, click: $parent.b.navBarClick, attr: {'id': id }">
+			</li>  
+		 <!-- /ko -->	
+		</script>
+		<ul data-bind="template: {name: 'navigation_template', foreach: c.navBar.items}"></ul>
+    </div>
+	
+    <div class="left_side_bar"> 
+      <div class="col_1">
+        <h1 data-bind="text: c.indexTitle"></h1>
+        <div id="divIndex" class="box">
+			<script>
+				var alreadyRenderer = [];
+				function buildTree($element, $object) {
+					var $ul = $('<ul></ul>');
+					var $li;
+					$object.forEach((item) => {
+					    if(item.id > 0){
+							if(alreadyRenderer.find(i => i == item.id) == null){
+								
+								if(window.content.index.getSubItems(item.id).length > 0)
+									$li = $('<li class="aParentItem" data-bind="attr: {\'id\': '+item.id+' }"><a class="selectable">' + item.text + '</a></li>');
+								else
+									$li = $('<li class="aListItem" data-bind="click: b.indexItemClick, attr: {\'id\': '+item.id+' }"><a class="selectable" data-parameter="'+item.id+'">' + item.text + '</a></li>');
+								
+								$ul.append($li);
+								alreadyRenderer.push(item.id);
+								if (window.content.index.getSubItems(item.id).length > 0) {
+									buildTree($li, window.content.index.getSubItems(item.id));
+								}
+								$element.append($ul);
+								
+							}
+					   }
+					});
+				};
+				
+				buildTree($("#divIndex"),window.content.index.items);
+	
+				$('li a').click(function (e) {
+					e.preventDefault();
+					var ullist = $(this).parent().children('ul:first');
+					ullist.slideToggle();
+				});
+				
+				$('ul ul').hide()
+				
+			</script>
+        </div>
+      </div>
+      
+      <div class="col_1">
+        <h1>Notas</h1>
+        <div class="box">
+     	 <div id="contentNotesContainer"></div> 
+        </div>
+		
+      </div>
+	 
+	   <div class="col_1">
+			<h2>Audio</h2>
+			
+			<div class="box">
+				<audio id="currentAudioPlayer" style="width: 100%; padding: 0px; margin: 0px"  controls="controls" autoplay name="media">
+					<source id="currentAudioUrl" type="audio/mp3">
+				</audio>
+			</div>
+	   </div>	   
+
+    </div>
+
+    <div class="right_section">
+      <div class="common_content">
+	    <h3 data-bind="text: c.currentNavBarTitle"></h3>
+		<h2 data-bind="text: c.currentIndexTitle"></h2>
+		<hr>
+		<div id="contentPageSectionContainer" class="ql-editor"></div>
+      </div>
+	   <hr>
+	  <i class="fas fa-arrow-left"></i>
+	  <span style="margin-left:5px;cursor: pointer;" data-bind="click: b.previousClick" class="selectable">Atras</span>
+	  <div style="float: right;cursor: pointer;">
+		<span style="margin-right:5px" data-bind="click: b.nextClick" class="selectable">Siguiente</span>
+		<i class="fas fa-arrow-right"></i>
+	  </div>
+    </div>
+	<div class="clear"></div>
+    <!--start footer from here-->
+    <div id="footer"><span data-bind="text: c.footerText"></span><br>
+    </div>
+	
+  </div>
+
+</div>
+<div id="dialog"></div>
+</body></html>
