@@ -1,0 +1,536 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin</title>
+<script type='text/javascript' src='js/libs/knockout-min.js'></script>
+<script src="js/libs/jquery-3.3.1.min.js"></script>
+<script type='text/javascript' src='js/behavior.js'></script>
+<script type='text/javascript' src='js/content.js'></script>
+<script type='text/javascript' src='js/libs/knockout-min.js'></script>
+<link href="css/quill.snow.css" rel="stylesheet">
+<script src="js/libs/quill.min.js"></script>
+<link type="text/css" rel="stylesheet" href="css/jsgrid.min.css" />
+<link type="text/css" rel="stylesheet" href="css/jsgrid-theme.min.css" />
+<script src="js/libs/FileSaver.min.js"></script>
+<script type="text/javascript" src="js/libs/jsgrid.min.js"></script>
+<link rel="stylesheet" href="css/bootstrap.min.css">
+</head>
+<script>
+</script>
+<body style="background-color: #EAF2F8">
+	<div style="margin:0px; padding:0px">
+		<div style="background-color: #A9CCE3; margin=0px">
+			<h1>Panel de Administración</h1>
+		</div>
+		<div>
+			<h3>Títulos</h3>
+			<p>Título: <input id="headerTitle" style="margin-left: 10px; width: 80%" type="text" /></p>
+			<p>Sub-Título: <input id="headerSubTitle" style="margin-left: 10px; width: 80%" type="text" /></p>
+			<p>Título-Indice: <input id="indexTitle"  style="margin-left: 10px; width: 80%" type="text" /></p>
+			<h3>Footer</h3>
+			<span>Texto:</span><input id="footerText" style="margin-left: 10px; width: 80%" type="text" />
+		</div>
+		<div style="margin: 20px">
+			<h3>Menú</h3>
+			<div id="jsGridMenu" style="background-color:white"></div>
+		</div>
+		<div  style="margin: 20px">
+			<h3>Índice</h3>
+			<div id="jsGridIndice" style="background-color:white"></div>
+		</div>
+		<div  style="margin: 20px">
+			<h3>Relación de contenido</h3>
+			<div id="jsGridRelacion" style="background-color:white"></div>
+		</div>
+		<div  style="margin: 20px; width: 735px">
+			<h3>Edición de Contenido "<span id="currentEdit"></span>"</h3>
+			<div style="background-color:white">
+		<div id="toolbar">
+				<span class="ql-formats">
+				  <select class="ql-font"></select>
+				  <select class="ql-size"></select>
+				</span>
+				<span class="ql-formats">
+				  <button class="ql-bold"></button>
+				  <button class="ql-italic"></button>
+				  <button class="ql-underline"></button>
+				  <button class="ql-strike"></button>
+				</span>
+				<span class="ql-formats">
+				  <select class="ql-color"></select>
+				  <select class="ql-background"></select>
+				</span>
+				<span class="ql-formats">
+				  <button class="ql-script" value="sub"></button>
+				  <button class="ql-script" value="super"></button>
+				</span>
+				<span class="ql-formats">
+				  <button class="ql-header" value="1"></button>
+				  <button class="ql-header" value="2"></button>
+				  <button class="ql-blockquote"></button>
+				  <button class="ql-code-block"></button>
+				</span>
+				<span class="ql-formats">
+				  <button class="ql-list" value="ordered"></button>
+				  <button class="ql-list" value="bullet"></button>
+				  <button class="ql-indent" value="-1"></button>
+				  <button class="ql-indent" value="+1"></button>
+				</span>
+				<span class="ql-formats">
+				  <button class="ql-direction" value="rtl"></button>
+				  <select class="ql-align"></select>
+				</span>
+				<span class="ql-formats">
+				  <button class="ql-link"></button>
+				  <button class="ql-image"></button>
+				  <button class="ql-video"></button>
+				  <button class="ql-formula"></button>
+				</span>
+				<span class="ql-formats">
+				  <button class="ql-clean"></button>
+				</span>
+		</div>
+				<div id="editor"  style="height: 500px"></div>
+			</div>
+		</div>
+		<div style="margin:30px">
+			<button id="btnGuardar">Guardar</button>
+		</div>
+	<div>
+</body>
+<script>	
+	var cambiosPendientes = false;
+	window.onbeforeunload = () => {
+		if(cambiosPendientes == true)
+			return "Existen cambios pendientes sin guardar. Desea cerrar?";
+    }
+	
+	var relacionPortada = window.content.contentPages.contentPages.find(i => i.navBarId === 0);
+	if(!relacionPortada){
+		window.content.navBar.items.unshift({ id: 0, text: 'Portada'});
+		window.content.index.items.unshift({ id: 0, text:  'Subtitulo de Portada'});
+		window.content.contentPages.contentPages.unshift({
+				navBarId: 0,
+				indexId: 0,
+				popUp: false,
+				notes: "Sección de notas",
+				audioUrl: null,
+				htmlPage: 'Página de Portada'
+		});
+	}
+		
+	$("#imgUrl").val(content.imgUrl);
+	$("#headerTitle").val(content.headerTitle);
+	$("#headerSubTitle").val(content.headerSubTitle);
+	$("#footerText").val(content.footerText);
+	$("#indexTitle").val(content.indexTitle);
+
+	var toolbarOptions = [[{'font': [] }, {'size': [] }],
+                      ['bold', 'italic', 'underline', 'strike'],
+                      ['color', 'background'],
+                      [{'script': 'sub'}, {'script': 'super'}],
+                      [{'header': 1}, {'header': 2}, 'blockquote', 'code-block'],
+                      [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+                      [{'direction': 'rtl'}, {'align': [] }],
+                      ['link', 'image', 'video'],
+                      ['clean']];
+	
+	var options = {
+	  readOnly: true,	
+	 // debug: 'info',
+	  modules: {
+		//syntax: true,
+		toolbar: "#toolbar"
+		//toolbar: toolbarOptions
+	  },
+	  theme: 'snow'
+	};
+
+   var quill = new Quill('#editor', options);
+   
+   //------------------------------------------------------------------------
+   
+    $("#jsGridMenu").jsGrid({
+        width: "100%",
+        height: "400px",
+   
+        inserting: true,
+        editing: true,
+        sorting: true,
+        paging: true,
+ 
+        data: window.content.navBar.getItems(),
+ 
+        fields: [
+            { title: "Id",name: "id", type: "number", width: 10, editing: false },
+            { title: "Título",name: "text", type: "text", width: 100, validate: "required"  },
+			{ type: "control" }
+        ],
+		onItemDeleting: function(args) {
+            var pages = window.content.contentPages.getPages();
+			var item = args.item;
+			var found = pages.find(i => i.navBarId === item.id);
+		   
+		    if(found){
+				alert("No puede eliminarse un item ya que posee una relacion de contenido");
+				args.cancel = true;
+				return;
+			}
+			
+			cambiosPendientes = true;
+		},
+		onItemInserting: function(args) {
+			var pages = window.content.navBar.getItems();
+			var item = args.item;
+			var found = pages.find(i => i.id === item.id);
+			 if(found){
+				alert("Id duplicado. Ingrese otro id.");
+				args.cancel = true;
+				return;
+			}
+			
+			if(item.id < 1){
+				alert("El id debe ser mayor a 0.");
+				args.cancel = true;
+				return;
+			}
+			
+			cambiosPendientes = true;
+		},
+		onItemInserted: function(args) {
+			cambiosPendientes = true;
+		//  $("#jsGridRelacion").jsGrid().fieldOption("indexId","items",window.content.navBar.getItems());
+		},
+		onItemDeleted: function(args) {
+			cambiosPendientes = true;
+		//	$("#jsGridRelacion").jsGrid().fieldOption("indexId","items",window.content.navBar.getItems());
+		}
+    });
+	
+	$("#jsGridIndice").jsGrid({
+        width: "100%",
+        height: "400px",
+ 
+        inserting: true,
+        editing: true,
+        sorting: true,
+        paging: true,
+ 
+        data: window.content.index.getItems(),
+ 
+        fields: [
+            { title: "Id" ,name: "id", type: "number", width: 10, editing: false },
+			{ title: "Id Padre" ,name: "parentId", type: "number", width: 10  },
+            { title: "Título" ,name: "text", type: "text", width: 100, validate: "required"  },
+			/*{ name: "Item Menu", type: "select", width: 100, validate: "required", items: window.content.navBar.getItems(), valueField: "id", textField: "text"},*/
+			{ type: "control" } ],
+	
+	    onItemDeleting: function(args) {
+
+		    var pages = window.content.contentPages.getPages();
+			var item = args.item;
+			var found = pages.find(i => i.indexId === item.id);
+		   
+		    if(found){
+				alert("No puede eliminarse un item ya que posee una relacion de contenido");
+				args.cancel = true;
+				return;
+			}
+			
+			var hasChilds = pages.find(i => i.parentId === item.parentId);
+			if(hasChilds != null && hasChilds.length > 0){
+				alert("No puede eliminarse un item ya que posee hijos");
+				args.cancel = true;
+				return;
+			}
+			
+			cambiosPendientes = true;
+		},
+		onItemInserting: function(args) {
+			var pages = window.content.index.getItems();
+			var item = args.item;
+			var found = pages.find(i => i.id === item.id);
+			 if(found){
+				alert("Id duplicado. Ingrese otro id.");
+				args.cancel = true;
+				return;
+			}
+			
+			if(item.parentId == null){
+				item.parentId = null;
+				cambiosPendientes = true;
+				return;
+			}
+			
+			var parentFound = pages.find(i => i.id === item.parentId);
+			if(parentFound == null){
+				alert("Id padre inexistente.");
+				args.cancel = true;
+				return;
+			}
+			
+			if(item.id < 1){
+				alert("El id debe ser mayor a 0.");
+				args.cancel = true;
+				return;
+			}
+			
+			cambiosPendientes = true;
+		},
+		onItemInserted: function(args) {
+		cambiosPendientes = true;
+		//  gridRelacion.fieldOption("indexId","items",window.content.navBar.getItems());
+		},
+		onItemDeleted: function(args) {
+		cambiosPendientes = true;
+			//gridRelacion.fieldOption("indexId","items",window.content.navBar.getItems());
+		},
+		onItemUpdating: function(args) {
+	     
+			//gridRelacion.fieldOption("indexId","items",window.content.navBar.getItems());
+			var pages = window.content.index.getItems();
+			var item = args.item;
+			
+			if(item.parentId == null){
+				item.parentId = null;
+	
+			}
+			else{
+				
+				var parentFound = pages.find(i => i.id === item.parentId);
+				if(parentFound == null){
+					alert("Id padre inexistente.");
+					args.cancel = true;
+					return;
+				}
+				
+				if(item.id == item.parentId){
+				   alert("Id y id padre no pueden ser iguales.");
+					args.cancel = true;
+					return;
+				}
+			}
+			
+			cambiosPendientes = true;
+		}
+    });
+	
+	var cancelEditBtn;
+	var currentHtml = null;
+	var gridRelacion = $("#jsGridRelacion").jsGrid({
+        width: "100%",
+        height: "400px",
+		//filtering: true,
+        inserting: true,
+        editing: true,
+        sorting: true,
+        paging: true,
+        deleteConfirm: "¿Esta seguro de eliminar la relación?",
+        data: window.content.contentPages.getPages(),
+ 
+        fields: [
+		    { title: "Menu Id",name: "navBarId", type: "select", width: 50, validate: "required", items: window.content.navBar.getItems(), valueField: "id", textField: "text", 
+				editTemplate: function(value, item) {
+						var $result = jsGrid.fields.select.prototype.editTemplate.apply(this, arguments);
+						if (item.indexId == 0 || item.navBarId == 0) {
+							$result.prop("disabled",true);
+						}else{
+							$result[0].options.remove(0);
+						}
+						return $($result);
+					},
+				insertTemplate: function(value, item) {
+						var $result = jsGrid.fields.select.prototype.insertTemplate.apply(this, arguments);
+						$result[0].options.remove(0);
+						return $($result);
+					}},
+			{ title: "Indice Id",name: "indexId", type: "select", width: 50, validate: "required", items: window.content.index.getParents(), valueField: "id", textField: "text", 
+				editTemplate: function(value, item) {
+						var $result = jsGrid.fields.select.prototype.editTemplate.apply(this, arguments);
+						if (item.indexId == 0 || item.navBarId == 0) {
+							$result.prop("disabled",true);
+						}else{
+							$result[0].options.remove(0);
+						}
+						return $($result);
+					},
+					insertTemplate: function(value, item) {
+						var $result = jsGrid.fields.select.prototype.insertTemplate.apply(this, arguments);
+						$result[0].options.remove(0);
+						return $($result);
+					}},
+            { title: "Popup" ,name: "popUp", type: "checkbox", width: 15, validate: "required"  , 
+				editTemplate: function(value, item) {
+						var $result = jsGrid.fields.checkbox.prototype.editTemplate.apply(this, arguments);
+						if (item.indexId == 0 || item.navBarId == 0) {
+							$result.prop("disabled",true);
+						}
+						return $($result);
+					}},
+			{ title: "Notas", name: "notes", type: "text", width: 150  },
+			{ title: "AudioUrl", name: "audioUrl", type: "text", width: 100  },
+			{ name: "htmlPage", visible: false  },
+			{ type: "control", 
+			 _createCancelEditButton: function() {
+				  cancelEditBtn = jsGrid.fields.control.prototype._createCancelEditButton.apply(this, arguments);
+				  cancelEditBtn.on("click", function() { 
+					  quill.disable(); 
+					  quill.root.innerHTML = currentHtml;
+					  currentHtml=null;
+					  cancelEditBtn = null;
+				  });
+				  return cancelEditBtn;
+				}
+			} 
+			
+			],
+		 onItemDeleting: function(args) {
+			var item = args.item;
+			//si es portada
+			if(item.navBarId == 0){
+				alert("La portada no puede ser eliminada");
+				args.cancel = true;
+				return;
+			}
+		},			
+		onItemInserted: function(args) {
+			var item = args.item;
+			var htmlPage = $("#editor .ql-editor").html();
+			
+			if(htmlPage && htmlPage != '<p><br></p>')
+				item.htmlPage = htmlPage;
+			else
+				item.htmlPage =  "<p>Página sin contenido.</p>";
+				
+			if(item.notes == null)
+				item.notes = "Sin notas.";
+			
+			quill.disable();
+			cambiosPendientes = true;
+			
+		},
+		onItemDeleted: function(args) {
+				quill.root.innerHTML = "";
+				$("#currentEdit").text("");
+				cambiosPendientes = true;
+		},
+		onItemEditing: function(args){
+		   //this.fieldOption("indexId","items",window.content.navBar.getItems());
+		   currentHtml = $("#editor .ql-editor").html();
+		   quill.enable();
+		   cambiosPendientes = true;
+		},
+		onItemUpdated: function(args){
+			var item = args.item;
+			var htmlPage = $("#editor .ql-editor").html();
+			
+			if(htmlPage && htmlPage != '<p><br></p>')
+				item.htmlPage = htmlPage;
+			else
+				item.htmlPage =  "<p>Página sin contenido.</p>";
+				
+			if(item.notes == null)
+				item.notes = "Sin notas.";
+			
+			quill.disable();
+			cambiosPendientes = true;
+			cancelEditBtn = null;
+		},
+	    onItemInserting: function(args) {
+			var item = args.item;
+			var foundDuplicated = this.data.find(i => i.navBarId === item.navBarId && i.indexId == item.indexId);
+			quill.root.innerHTML = '';
+			
+			if(foundDuplicated){
+				alert("La combinación entre menu e indice ya existe");
+				args.cancel = true;
+				return;
+			}
+			
+			if(item.notes == null)
+				item.notes = '';
+		
+			$("#jsGridRelacion").jsGrid("loadData", window.content.contentPages.getPages());
+			cambiosPendientes = true;
+		},
+		rowClick: function(args) {
+			if(cancelEditBtn){
+				if( confirm("Esta cambiando de relación mientras estaba editando otra. ¿Desea cancelar los posibles cambios efectuados?") == true){
+					cancelEditBtn.click();
+					cancelEditBtn = null;
+				}else{
+					args.cancel = true;
+					return;
+				}
+			}
+		
+			quill.disable();
+			quill.root.innerHTML = args.item.htmlPage;
+			var nabVarId = args.item.navBarId;
+			var indexId  = args.item.indexId;
+			var nabBarText = "";
+			
+			var itByNVid = window.content.navBar.items.find(i => i.id == nabVarId);
+			
+			if(itByNVid)
+				nabBarText = itByNVid.text;
+			
+			var indexText = "";
+			var  itIndexById=  window.content.index.items.find(i => i.id == indexId);
+			
+			if(itIndexById)
+				indexText = itIndexById.text;
+			
+			
+			$("#currentEdit").text(nabBarText+" / "+indexText);
+			//$("#ectitulo").val(1);
+			//$("#ecindice").val(2);
+			
+		}
+    });
+	
+   $("#btnGuardar").on("click",() => {
+		var minMenuId = 99999999999999;
+	
+		var cnt = window.content;
+		cnt.imgUrl= $("#imgUrl").val();
+		cnt.headerTitle= $("#headerTitle").val();
+		cnt.headerSubTitle= $("#headerSubTitle").val();
+		cnt.footerText= $("#footerText").val();
+		cnt.indexTitle= $("#indexTitle").val();
+		
+		for(var i = 0; i < cnt.navBar.items.length; i++){
+			var curId = cnt.navBar.items[i].id;
+			if(curId != 0 && curId < minMenuId)
+			   minMenuId = curId;
+		}
+		
+		cnt.minMenuId = minMenuId;
+		
+		if(cnt.index && cnt.index.items){
+			cnt.index.items = cnt.index.items.sort((a,b) => { 
+				if(a.id > b.id)
+				{ 
+					return 1; 
+				}
+				else
+				{ 
+					return -1; 
+				}
+			});
+		}
+		
+		var jsonContent= 'window.content = new content(); window.content.load(eval('+JSON.stringify(cnt)+'));';
+		var blob = new Blob([jsonContent], {type: "text/html;charset=utf-8"});
+		saveAs(blob, "content.js");
+		
+		/*
+		var blob = new Blob([$("#editor .ql-editor").html()], {type: "text/html;charset=utf-8"});
+		saveAs(blob, "test.html");
+		*/
+		cambiosPendientes = false;
+   });
+
+ </script>
+</html>
